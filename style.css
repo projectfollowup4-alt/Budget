@@ -61,18 +61,6 @@ header {
     filter: brightness(0) invert(1);
 }
 
-/* CSS-only fallback if logo.png is missing */
-.logo-container::after {
-    content: 'OVID';
-    position: absolute;
-    font-size: 2.5rem;
-    font-weight: 900;
-    color: var(--primary-light);
-    letter-spacing: -2px;
-    opacity: 0.2;
-    z-index: 1;
-}
-
 #nav-info {
     display: flex;
     align-items: center;

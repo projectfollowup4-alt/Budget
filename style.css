@@ -60,7 +60,7 @@ header {
     height: 70px;
     width: auto;
     object-fit: contain;
-    filter: drop-shadow(0 0 12px rgba(45, 66, 161, 0.4));
+    filter: brightness(0) invert(1) drop-shadow(0 0 12px rgba(255, 255, 255, 0.2));
     z-index: 2;
 }
 

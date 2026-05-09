@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Utilization Followup - OVID Construction</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="dark-theme">
+    <div id="app">
+        <header>
+            <div class="logo-container">
+                <!-- User should place logo.png in the same directory -->
+                <img src="logo.png" alt="OVID Construction Logo" id="main-logo" onerror="this.src='https://via.placeholder.com/150x50?text=OVID+CONSTRUCTION'">
+            </div>
+            <nav id="nav-info">
+                <span id="current-project-name">Project Dashboard</span>
+                <button id="back-btn" class="hidden"><i data-lucide="arrow-left"></i> Back to Projects</button>
+            </nav>
+        </header>
+
+        <main id="main-content">
+            <!-- Content will be injected here by app.js -->
+            <div class="loader">
+                <div class="spinner"></div>
+                <p>Loading Budget Data...</p>
+            </div>
+        </main>
+
+        <div id="modal-container" class="hidden">
+            <div class="modal-content glass">
+                <span class="close-modal">&times;</span>
+                <div id="modal-body"></div>
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; 2026 OVID Construction - Budget Utilization Followup</p>
+        </footer>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

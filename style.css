@@ -1,0 +1,432 @@
+:root {
+    --primary: #2d42a1;
+    --primary-light: #4c66d6;
+    --accent: #1a938c;
+    --bg-dark: #0f172a;
+    --card-bg: rgba(30, 41, 59, 0.7);
+    --text-main: #f8fafc;
+    --text-dim: #94a3b8;
+    --glass: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Outfit', sans-serif;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+#app {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* Header */
+header {
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.logo-container img {
+    height: 70px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 0 12px rgba(45, 66, 161, 0.4));
+    z-index: 2;
+}
+
+/* CSS-only fallback if logo.png is missing */
+.logo-container::after {
+    content: 'OVID';
+    position: absolute;
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--primary-light);
+    letter-spacing: -2px;
+    opacity: 0.2;
+    z-index: 1;
+}
+
+#nav-info {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+#current-project-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-light);
+}
+
+.hidden {
+    display: none !important;
+}
+
+button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background: var(--primary-light);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(45, 66, 161, 0.3);
+}
+
+/* Main Content */
+main {
+    padding: 2rem;
+    flex: 1;
+}
+
+/* Project Cards Grid */
+.project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.project-card {
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 2rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.project-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.project-card:hover {
+    transform: translateY(-8px);
+    border-color: var(--primary-light);
+    background: rgba(30, 41, 59, 0.9);
+}
+
+.project-card:hover::before {
+    opacity: 1;
+}
+
+.project-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.project-card p {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+}
+
+/* Budget View */
+.budget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.stat-group {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.stat-card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    min-width: 200px;
+}
+
+.stat-card label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-bottom: 0.25rem;
+}
+
+.stat-card span {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+/* Tables */
+.table-container {
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    text-align: left;
+    padding: 1rem;
+    background: rgba(15, 23, 42, 0.5);
+    color: var(--text-dim);
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+}
+
+td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--glass-border);
+    font-size: 0.9rem;
+}
+
+tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.category-row {
+    background: rgba(45, 66, 161, 0.2);
+    border-top: 2px solid var(--primary-light);
+}
+
+.category-row td {
+    font-weight: 700;
+    color: var(--primary-light);
+    font-size: 1.1rem;
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+}
+
+.total-row {
+    background: rgba(16, 185, 129, 0.15);
+    border-top: 2px solid var(--success);
+}
+
+.total-row td {
+    font-weight: 800;
+    color: var(--success);
+    font-size: 1.2rem;
+}
+
+/* Add some indentation to items that are NOT categories or totals */
+tr:not(.category-row):not(.total-row) td:first-child {
+    padding-left: 2.5rem;
+    color: var(--text-dim);
+}
+
+/* Modal */
+#modal-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    width: 90%;
+    max-width: 500px;
+    background: #1e293b;
+    padding: 2rem;
+    border-radius: 20px;
+    position: relative;
+    border: 1px solid var(--glass-border);
+}
+
+.close-modal {
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+/* Form Elements */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 0.8rem;
+    border-radius: 8px;
+    border: 1px solid var(--glass-border);
+    background: rgba(15, 23, 42, 0.5);
+    color: white;
+    font-size: 1rem;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 2px rgba(76, 102, 214, 0.2);
+}
+
+.calc-preview {
+    background: rgba(16, 185, 129, 0.1);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Loader */
+.loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid var(--glass);
+    border-top: 5px solid var(--primary-light);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    header {
+        padding: 1rem;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+    
+    .logo-container img {
+        height: 50px;
+    }
+
+    #current-project-name {
+        font-size: 1rem;
+    }
+
+    main {
+        padding: 1rem;
+    }
+    
+    .budget-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .stat-card {
+        width: 100%;
+        min-width: unset;
+    }
+    
+    /* Show only essential columns on mobile */
+    th:nth-child(3), th:nth-child(4), th:nth-child(5),
+    td:nth-child(3), td:nth-child(4), td:nth-child(5) {
+        display: none;
+    }
+    
+    .table-container {
+        border-radius: 0;
+        margin: 0 -1rem;
+        width: calc(100% + 2rem);
+    }
+
+    table {
+        font-size: 0.85rem;
+    }
+
+    td {
+        padding: 0.75rem 0.5rem;
+    }
+
+    /* Make the Update button very prominent on mobile */
+    td:last-child {
+        text-align: right;
+    }
+
+    button {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.8rem;
+    }
+    
+    tr:not(.category-row):not(.total-row) td:first-child {
+        padding-left: 1rem;
+    }
+}

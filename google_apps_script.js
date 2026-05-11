@@ -50,14 +50,28 @@ function getProjectsForUser(ss, phone) {
   let userApproval = null;
 
   // Clean phone matching
+  // Search for the user's approval status
   for (let i = 1; i < approvalsData.length; i++) {
-    if (cleanPhone(approvalsData[i][1]) === phone) {
-      userApproval = {
+    const rowPhone = cleanPhone(approvalsData[i][1]);
+    const rowStatus = String(approvalsData[i][5] || "").trim();
+    
+    if (rowPhone === phone) {
+      // Create or update the user record
+      const record = {
         name: approvalsData[i][0],
-        status: String(approvalsData[i][5]).trim(),
+        status: rowStatus,
         approvedProjects: String(approvalsData[i][4] || "").split(',').map(s => s.trim())
       };
-      // Don't break, find the LATEST entry (last one in sheet)
+      
+      // PRIORITY: If we find an 'Approved' entry, that is our final answer.
+      if (rowStatus.toLowerCase() === 'approved') {
+        userApproval = record;
+        userApproval.status = 'Approved'; // Normalize casing
+        break; 
+      }
+      
+      // Otherwise, keep the latest entry found so far (usually 'Pending')
+      userApproval = record;
     }
   }
 

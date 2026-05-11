@@ -106,17 +106,31 @@ function handleIdentitySubmit() {
 }
 
 async function checkAuthAndLoadProjects() {
-    mainContent.innerHTML = `
-        <div class="loader">
-            <div class="spinner"></div>
-            <p>Verifying access for ${state.user.name}...</p>
-        </div>
-    `;
+    // Show cached data immediately if available
+    const cachedData = localStorage.getItem('ovid_budget_cache');
+    if (cachedData) {
+        const data = JSON.parse(cachedData);
+        if (data.status === 'approved') {
+            state.budgetData = data.projects;
+            state.authStatus = 'approved';
+            renderProjectList();
+        }
+    } else {
+        mainContent.innerHTML = `
+            <div class="loader">
+                <div class="spinner"></div>
+                <p>Verifying access for ${state.user.name}...</p>
+            </div>
+        `;
+    }
 
     try {
         const response = await fetch(`${CONFIG.SCRIPT_URL}?action=getProjects&phone=${state.user.phone}`);
         const data = await response.json();
         
+        // Save to cache for next time
+        localStorage.setItem('ovid_budget_cache', JSON.stringify(data));
+
         if (data.status === 'not_found') {
             state.availableProjects = data.availableProjects || [];
             renderRequestForm();
@@ -128,7 +142,9 @@ async function checkAuthAndLoadProjects() {
             renderProjectList();
         }
     } catch (error) {
-        mainContent.innerHTML = `<div class="error-msg">Connection Error: Please check your internet or retry.</div>`;
+        if (!state.budgetData) {
+            mainContent.innerHTML = `<div class="error-msg">Offline: Please check your internet.</div>`;
+        }
     }
 }
 
@@ -266,7 +282,9 @@ function renderProjectList() {
 
 function logout() {
     localStorage.removeItem('ovid_budget_user');
+    localStorage.removeItem('ovid_budget_cache');
     state.user = null;
+    state.budgetData = {};
     renderAuthForm();
 }
 

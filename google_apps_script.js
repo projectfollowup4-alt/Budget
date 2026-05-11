@@ -100,8 +100,8 @@ function getSheetData(sheet) {
     const desc = String(row[1] || "").trim();
     if (!desc || desc === "Description") continue;
 
-    const isCategory = categories.some(cat => desc.toUpperCase().includes(cat));
-    const isGrandTotal = desc.toUpperCase().includes('GRAND TOTAL') || desc.toUpperCase() === 'TOTAL';
+    const isCategory = categories.some(cat => desc.toUpperCase() === cat);
+    const isGrandTotal = desc.toUpperCase() === 'GRAND TOTAL' || desc.toUpperCase() === 'TOTAL';
 
     items.push({
       row: i + 1,

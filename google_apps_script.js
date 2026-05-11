@@ -1,18 +1,16 @@
 /**
- * Google Apps Script for Budget Utilization Followup (v2 - Access Control)
- * Paste this into Extensions > Apps Script in your Google Sheet.
+ * Google Apps Script for Budget Utilization Followup (v3 - Multi-Select & Robust Auth)
  */
 
 function doGet(e) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const action = e.parameter.action;
-  const phone = e.parameter.phone;
+  const phone = cleanPhone(e.parameter.phone);
 
   if (action === 'getProjects') {
     return getProjectsForUser(ss, phone);
   }
 
-  // Default: Return all (for legacy or admin view)
   return getAllProjects(ss);
 }
 
@@ -51,26 +49,29 @@ function getProjectsForUser(ss, phone) {
   const approvalsData = approvalSheet.getDataRange().getValues();
   let userApproval = null;
 
+  // Clean phone matching
   for (let i = 1; i < approvalsData.length; i++) {
-    if (String(approvalsData[i][1]) === String(phone)) { // Column B: Phone
+    if (cleanPhone(approvalsData[i][1]) === phone) {
       userApproval = {
         name: approvalsData[i][0],
-        status: approvalsData[i][5], // Column F: Status
-        approvedProjects: String(approvalsData[i][4] || "").split(',').map(s => s.trim()) // Column E
+        status: String(approvalsData[i][5]).trim(),
+        approvedProjects: String(approvalsData[i][4] || "").split(',').map(s => s.trim())
       };
-      break;
+      // Don't break, find the LATEST entry (last one in sheet)
     }
   }
 
   if (!userApproval) {
-    return jsonResponse({ status: 'not_found' });
+    return jsonResponse({ 
+      status: 'not_found', 
+      availableProjects: getAvailableProjectNames(ss) 
+    });
   }
 
   if (userApproval.status !== 'Approved') {
     return jsonResponse({ status: 'pending', name: userApproval.name });
   }
 
-  // Filter projects
   const sheets = ss.getSheets();
   const systemSheets = ['Approvals', 'Instructions', 'Settings'];
   const results = {};
@@ -79,7 +80,6 @@ function getProjectsForUser(ss, phone) {
     const name = sheet.getName();
     if (systemSheets.includes(name)) return;
     
-    // Check if user has access to this project or 'All'
     const hasAccess = userApproval.approvedProjects.includes('All') || userApproval.approvedProjects.includes(name);
     
     if (hasAccess) {
@@ -88,6 +88,13 @@ function getProjectsForUser(ss, phone) {
   });
 
   return jsonResponse({ status: 'approved', projects: results });
+}
+
+function getAvailableProjectNames(ss) {
+  const systemSheets = ['Approvals', 'Instructions', 'Settings'];
+  return ss.getSheets()
+    .map(s => s.getName())
+    .filter(name => !systemSheets.includes(name));
 }
 
 function getSheetData(sheet) {
@@ -109,7 +116,7 @@ function getSheetData(sheet) {
       amount: parseFloat(row[5]) || 0,
       utilization: parseFloat(String(row[7]).replace('%', '')) || 0,
       issue: row[8] || row[9] || "",
-      reportedBy: row[10] || "", // Column K
+      reportedBy: row[10] || "",
       isCategory: isCategory && !isGrandTotal,
       isTotal: isGrandTotal
     });
@@ -123,9 +130,9 @@ function handleRequestAccess(ss, data) {
     data.name,
     data.phone,
     data.position,
-    data.requestedProject,
-    "", // Approved Projects (to be filled by admin)
-    "Pending", // Status
+    Array.isArray(data.requestedProjects) ? data.requestedProjects.join(', ') : data.requestedProject,
+    "", 
+    "Pending",
     new Date()
   ]);
   return jsonResponse({ success: true });
@@ -140,10 +147,8 @@ function handleUpdateUtilization(ss, data) {
   const issue = data.issue;
   const reporter = data.reporter || "Unknown";
   
-  // Column H (8): Utilization with %
   sheet.getRange(row, 8).setValue(utilization + "%");
   
-  // Columns I (9) and J (10): Issues
   if (data.issueCategory === 'OCON') {
     sheet.getRange(row, 9).setValue(issue);
     sheet.getRange(row, 10).setValue("");
@@ -152,7 +157,6 @@ function handleUpdateUtilization(ss, data) {
     sheet.getRange(row, 9).setValue("");
   }
 
-  // Column K (11): Reported By
   sheet.getRange(row, 11).setValue(reporter + " (" + new Date().toLocaleDateString() + ")");
 
   return jsonResponse({ success: true });
@@ -162,10 +166,15 @@ function getOrCreateApprovalsSheet(ss) {
   let sheet = ss.getSheetByName('Approvals');
   if (!sheet) {
     sheet = ss.insertSheet('Approvals');
-    sheet.appendRow(['Name', 'Phone', 'Position', 'Requested Project', 'Approved Projects', 'Status', 'Timestamp']);
+    sheet.appendRow(['Name', 'Phone', 'Position', 'Requested Projects', 'Approved Projects', 'Status', 'Timestamp']);
     sheet.getRange(1, 1, 1, 7).setFontWeight('bold').setBackground('#f3f3f3');
   }
   return sheet;
+}
+
+function cleanPhone(phone) {
+  if (!phone) return "";
+  return String(phone).replace(/\D/g, ''); // Keep only digits
 }
 
 function jsonResponse(data) {

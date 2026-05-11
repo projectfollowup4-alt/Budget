@@ -9,11 +9,12 @@ const CONFIG = {
 
 // Application State
 const state = {
-    currentView: 'auth', // 'auth', 'request', 'pending', 'projects', 'detail'
+    currentView: 'auth', 
     user: JSON.parse(localStorage.getItem('ovid_budget_user')) || null,
-    authStatus: 'none', // 'none', 'pending', 'approved'
+    authStatus: 'none', 
     selectedProject: null,
     budgetData: {}, 
+    availableProjects: [], // From server
     isLoading: false
 };
 
@@ -29,6 +30,10 @@ function initIcons() {
     if (window.lucide) {
         window.lucide.createIcons();
     }
+}
+
+function cleanPhone(phone) {
+    return String(phone).replace(/\D/g, '');
 }
 
 // Format Currency
@@ -82,14 +87,15 @@ function renderAuthForm() {
 
 function handleIdentitySubmit() {
     const name = document.getElementById('auth-name').value.trim();
-    const phone = document.getElementById('auth-phone').value.trim();
+    const phoneInput = document.getElementById('auth-phone').value.trim();
     const position = document.getElementById('auth-position').value.trim();
     
-    if (!name || !phone || !position) {
+    if (!name || !phoneInput || !position) {
         alert("Please fill in all fields");
         return;
     }
     
+    const phone = cleanPhone(phoneInput);
     state.user = { name, phone, position };
     localStorage.setItem('ovid_budget_user', JSON.stringify(state.user));
     checkAuthAndLoadProjects();
@@ -108,6 +114,7 @@ async function checkAuthAndLoadProjects() {
         const data = await response.json();
         
         if (data.status === 'not_found') {
+            state.availableProjects = data.availableProjects || [];
             renderRequestForm();
         } else if (data.status === 'pending') {
             renderPendingStatus();
@@ -117,7 +124,7 @@ async function checkAuthAndLoadProjects() {
             renderProjectList();
         }
     } catch (error) {
-        mainContent.innerHTML = `<div class="error-msg">Connection Error: Please ensure you have internet access.</div>`;
+        mainContent.innerHTML = `<div class="error-msg">Connection Error: Please check your internet or retry.</div>`;
     }
 }
 
@@ -125,27 +132,35 @@ function renderRequestForm() {
     state.currentView = 'request';
     projectNameEl.textContent = 'Request Access';
     
+    let projectsHtml = `
+        <div class="checkbox-group">
+            <label class="checkbox-item">
+                <input type="checkbox" name="req-project" value="All">
+                <span>All Projects (Coordinators)</span>
+            </label>
+    `;
+    
+    state.availableProjects.forEach(p => {
+        projectsHtml += `
+            <label class="checkbox-item">
+                <input type="checkbox" name="req-project" value="${p}">
+                <span>${p}</span>
+            </label>
+        `;
+    });
+    projectsHtml += `</div>`;
+    
     mainContent.innerHTML = `
         <div class="auth-card glass">
             <h2>Access Required</h2>
-            <p>You don't have permission to view any projects yet. Please select a project to request access.</p>
+            <p>Select the projects you need to manage. You can choose one or multiple.</p>
             
             <div class="form-group">
-                <label>Project to Access</label>
-                <select id="request-project">
-                    <option value="All">All Projects (Coordinators Only)</option>
-                    <option value="ICS-Akaki">ICS-Akaki</option>
-                    <option value="Fana">Fana</option>
-                    <option value="ICS-Garment">ICS-Garment</option>
-                    <option value="ICS-Kolfe">ICS-Kolfe</option>
-                    <option value="ICS-Lemi Kura">ICS-Lemi Kura</option>
-                    <option value="MOH">MOH</option>
-                    <option value="Republican">Republican</option>
-                    <option value="420">420</option>
-                </select>
+                <label>Projects to Access</label>
+                ${projectsHtml}
             </div>
             
-            <button onclick="handleRequestAccess()" style="width: 100%; justify-content: center;">
+            <button onclick="handleRequestAccess()" style="width: 100%; justify-content: center; margin-top: 1.5rem;">
                 <i data-lucide="send"></i> Send Request
             </button>
             
@@ -158,7 +173,12 @@ function renderRequestForm() {
 }
 
 async function handleRequestAccess() {
-    const project = document.getElementById('request-project').value;
+    const selected = Array.from(document.querySelectorAll('input[name="req-project"]:checked')).map(cb => cb.value);
+    
+    if (selected.length === 0) {
+        alert("Please select at least one project");
+        return;
+    }
     
     mainContent.innerHTML = `<div class="loader"><div class="spinner"></div><p>Sending request...</p></div>`;
     
@@ -171,7 +191,7 @@ async function handleRequestAccess() {
                 name: state.user.name,
                 phone: state.user.phone,
                 position: state.user.position,
-                requestedProject: project
+                requestedProjects: selected
             })
         });
         renderPendingStatus();
@@ -189,8 +209,8 @@ function renderPendingStatus() {
         <div class="auth-card glass" style="text-align: center;">
             <i data-lucide="clock" style="width: 64px; height: 64px; color: var(--warning); margin-bottom: 1.5rem;"></i>
             <h2>Request Pending</h2>
-            <p>Your access request for <strong>${state.user.name}</strong> is currently being reviewed by the administrator.</p>
-            <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 1rem;">Please check back later.</p>
+            <p>Your access request for <strong>${state.user.name}</strong> is currently being reviewed.</p>
+            <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 1rem;">Admin: Ensure you have marked status as "Approved" in the Approvals sheet.</p>
             
             <button onclick="checkAuthAndLoadProjects()" style="width: 100%; justify-content: center; margin-top: 2rem;">
                 <i data-lucide="refresh-cw"></i> Check Status

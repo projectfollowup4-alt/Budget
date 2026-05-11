@@ -4,16 +4,16 @@
  */
 
 const CONFIG = {
-    // This URL will be provided after deploying the Google Apps Script
-    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx6OA8RkB5Pasz-OFsA-O-ZbaxqDIB6Kb9scYidhOTvi6GtP2780fctx0fS_0swfG_81Q/exec', 
-    PROJECTS: ['ICS-Akaki', 'Fana', 'ICS-Garment', 'ICS-Kolfe', 'ICS-Lemi Kura', 'MOH', 'Republican', '420']
+    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx6OA8RkB5Pasz-OFsA-O-ZbaxqDIB6Kb9scYidhOTvi6GtP2780fctx0fS_0swfG_81Q/exec'
 };
 
 // Application State
 const state = {
-    currentView: 'projects', // 'projects' or 'detail'
+    currentView: 'auth', // 'auth', 'request', 'pending', 'projects', 'detail'
+    user: JSON.parse(localStorage.getItem('ovid_budget_user')) || null,
+    authStatus: 'none', // 'none', 'pending', 'approved'
     selectedProject: null,
-    budgetData: {}, // Cached data per project
+    budgetData: {}, 
     isLoading: false
 };
 
@@ -42,21 +42,190 @@ function formatCurrency(amount) {
 
 // --- View Rendering ---
 
+async function initApp() {
+    if (!state.user) {
+        renderAuthForm();
+    } else {
+        await checkAuthAndLoadProjects();
+    }
+}
+
+function renderAuthForm() {
+    state.currentView = 'auth';
+    projectNameEl.textContent = 'Identity Verification';
+    
+    mainContent.innerHTML = `
+        <div class="auth-card glass">
+            <h2>Welcome to Budget Followup</h2>
+            <p>Please enter your details to verify your identity.</p>
+            
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="auth-name" placeholder="Enter your full name">
+            </div>
+            <div class="form-group">
+                <label>Phone Number</label>
+                <input type="tel" id="auth-phone" placeholder="e.g. 0911223344">
+            </div>
+            <div class="form-group">
+                <label>Position / Work Role</label>
+                <input type="text" id="auth-position" placeholder="e.g. Project Manager, Coordinator">
+            </div>
+            
+            <button onclick="handleIdentitySubmit()" style="width: 100%; justify-content: center; margin-top: 1rem;">
+                <i data-lucide="user-check"></i> Continue
+            </button>
+        </div>
+    `;
+    initIcons();
+}
+
+function handleIdentitySubmit() {
+    const name = document.getElementById('auth-name').value.trim();
+    const phone = document.getElementById('auth-phone').value.trim();
+    const position = document.getElementById('auth-position').value.trim();
+    
+    if (!name || !phone || !position) {
+        alert("Please fill in all fields");
+        return;
+    }
+    
+    state.user = { name, phone, position };
+    localStorage.setItem('ovid_budget_user', JSON.stringify(state.user));
+    checkAuthAndLoadProjects();
+}
+
+async function checkAuthAndLoadProjects() {
+    mainContent.innerHTML = `
+        <div class="loader">
+            <div class="spinner"></div>
+            <p>Verifying access for ${state.user.name}...</p>
+        </div>
+    `;
+
+    try {
+        const response = await fetch(`${CONFIG.SCRIPT_URL}?action=getProjects&phone=${state.user.phone}`);
+        const data = await response.json();
+        
+        if (data.status === 'not_found') {
+            renderRequestForm();
+        } else if (data.status === 'pending') {
+            renderPendingStatus();
+        } else if (data.status === 'approved') {
+            state.budgetData = data.projects;
+            state.authStatus = 'approved';
+            renderProjectList();
+        }
+    } catch (error) {
+        mainContent.innerHTML = `<div class="error-msg">Connection Error: Please ensure you have internet access.</div>`;
+    }
+}
+
+function renderRequestForm() {
+    state.currentView = 'request';
+    projectNameEl.textContent = 'Request Access';
+    
+    mainContent.innerHTML = `
+        <div class="auth-card glass">
+            <h2>Access Required</h2>
+            <p>You don't have permission to view any projects yet. Please select a project to request access.</p>
+            
+            <div class="form-group">
+                <label>Project to Access</label>
+                <select id="request-project">
+                    <option value="All">All Projects (Coordinators Only)</option>
+                    <option value="ICS-Akaki">ICS-Akaki</option>
+                    <option value="Fana">Fana</option>
+                    <option value="ICS-Garment">ICS-Garment</option>
+                    <option value="ICS-Kolfe">ICS-Kolfe</option>
+                    <option value="ICS-Lemi Kura">ICS-Lemi Kura</option>
+                    <option value="MOH">MOH</option>
+                    <option value="Republican">Republican</option>
+                    <option value="420">420</option>
+                </select>
+            </div>
+            
+            <button onclick="handleRequestAccess()" style="width: 100%; justify-content: center;">
+                <i data-lucide="send"></i> Send Request
+            </button>
+            
+            <button onclick="logout()" class="btn-secondary" style="width: 100%; margin-top: 1rem; justify-content: center;">
+                Change Identity
+            </button>
+        </div>
+    `;
+    initIcons();
+}
+
+async function handleRequestAccess() {
+    const project = document.getElementById('request-project').value;
+    
+    mainContent.innerHTML = `<div class="loader"><div class="spinner"></div><p>Sending request...</p></div>`;
+    
+    try {
+        await fetch(CONFIG.SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify({
+                action: 'requestAccess',
+                name: state.user.name,
+                phone: state.user.phone,
+                position: state.user.position,
+                requestedProject: project
+            })
+        });
+        renderPendingStatus();
+    } catch (error) {
+        alert("Failed to send request. Check your connection.");
+        renderRequestForm();
+    }
+}
+
+function renderPendingStatus() {
+    state.currentView = 'pending';
+    projectNameEl.textContent = 'Access Pending';
+    
+    mainContent.innerHTML = `
+        <div class="auth-card glass" style="text-align: center;">
+            <i data-lucide="clock" style="width: 64px; height: 64px; color: var(--warning); margin-bottom: 1.5rem;"></i>
+            <h2>Request Pending</h2>
+            <p>Your access request for <strong>${state.user.name}</strong> is currently being reviewed by the administrator.</p>
+            <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 1rem;">Please check back later.</p>
+            
+            <button onclick="checkAuthAndLoadProjects()" style="width: 100%; justify-content: center; margin-top: 2rem;">
+                <i data-lucide="refresh-cw"></i> Check Status
+            </button>
+            
+            <button onclick="logout()" class="btn-secondary" style="width: 100%; margin-top: 1rem; justify-content: center;">
+                Logout
+            </button>
+        </div>
+    `;
+    initIcons();
+}
+
 function renderProjectList() {
     state.currentView = 'projects';
     state.selectedProject = null;
     projectNameEl.textContent = 'Project Dashboard';
     backBtn.classList.add('hidden');
     
+    const projectNames = Object.keys(state.budgetData);
+
+    if (projectNames.length === 0) {
+        mainContent.innerHTML = `<div class="error-msg">No projects assigned to you. Contact admin.</div>`;
+        return;
+    }
+    
     let html = `
         <div class="view-header">
-            <h1>Select a Project</h1>
-            <p>Select a project to view and update budget utilization</p>
+            <h1>Your Projects</h1>
+            <p>Hello ${state.user.name}, select a project to manage.</p>
         </div>
         <div class="project-grid">
     `;
 
-    CONFIG.PROJECTS.forEach(project => {
+    projectNames.forEach(project => {
         html += `
             <div class="project-card" onclick="loadProject('${project}')">
                 <i data-lucide="building-2" style="width: 48px; height: 48px; color: var(--primary-light); margin-bottom: 1rem;"></i>
@@ -71,29 +240,19 @@ function renderProjectList() {
     initIcons();
 }
 
+function logout() {
+    localStorage.removeItem('ovid_budget_user');
+    state.user = null;
+    renderAuthForm();
+}
+
 async function loadProject(projectName) {
     state.selectedProject = projectName;
     state.currentView = 'detail';
     projectNameEl.textContent = projectName;
     backBtn.classList.remove('hidden');
     
-    // Show Loader
-    mainContent.innerHTML = `
-        <div class="loader">
-            <div class="spinner"></div>
-            <p>Fetching data for ${projectName}...</p>
-        </div>
-    `;
-
-    try {
-        // In a real app, fetch from SCRIPT_URL
-        // For now, I'll simulate data fetching
-        const data = await fetchProjectData(projectName);
-        state.budgetData[projectName] = data;
-        renderProjectDetail(projectName, data);
-    } catch (error) {
-        mainContent.innerHTML = `<div class="error-msg">Error loading project: ${error.message}</div>`;
-    }
+    renderProjectDetail(projectName, state.budgetData[projectName]);
 }
 
 function renderProjectDetail(name, data) {
@@ -107,7 +266,6 @@ function renderProjectDetail(name, data) {
     
     const remainingBudget = totalBudget - utilizedBudget;
 
-    // Reorganize items: Group them by the category that follows them
     const sections = [];
     let currentItems = [];
     
@@ -130,7 +288,7 @@ function renderProjectDetail(name, data) {
         <div class="budget-header">
             <div class="header-text">
                 <h1>Budget Followup</h1>
-                <p>Manage utilization and issues for ${name}</p>
+                <p>Manage utilization for ${name}</p>
             </div>
             <div class="stat-group">
                 <div class="stat-card">
@@ -156,7 +314,7 @@ function renderProjectDetail(name, data) {
                         <th>Amount (ETB)</th>
                         <th>Utilization %</th>
                         <th>Utilized Amt</th>
-                        <th>Status / Issue</th>
+                        <th>Reported By</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -164,20 +322,17 @@ function renderProjectDetail(name, data) {
     `;
 
     sections.forEach(section => {
-        // Render Category Header
         html += `
             <tr class="${section.isGrandTotal ? 'total-row' : 'category-row'}">
                 <td colspan="2">${section.category.description}</td>
                 <td colspan="2">${formatCurrency(section.category.amount)}</td>
-                <td colspan="2">Section Total</td>
+                <td colspan="2">${section.isGrandTotal ? 'Project Total' : 'Section Total'}</td>
             </tr>
         `;
 
-        // Render Items under this category
         section.items.forEach(item => {
             const index = data.items.indexOf(item);
             const utilizedAmt = (item.amount * (item.utilization || 0)) / 100;
-            const status = item.utilization > 0 ? `<span class="badge success">${item.utilization}% Utilized</span>` : `<span class="badge warning">Not Utilized</span>`;
             
             html += `
                 <tr>
@@ -185,7 +340,7 @@ function renderProjectDetail(name, data) {
                     <td>${formatCurrency(item.amount)}</td>
                     <td>${(item.utilization || 0) + '%'}</td>
                     <td>${formatCurrency(utilizedAmt)}</td>
-                    <td>${(item.issue || 'No issues reported')}</td>
+                    <td><div class="reporter-cell">${item.reportedBy || '<span style="opacity:0.3">-</span>'}</div></td>
                     <td>
                         <button onclick="openEditModal(${index})">
                             <i data-lucide="edit-3"></i> Update
@@ -196,17 +351,10 @@ function renderProjectDetail(name, data) {
         });
     });
 
-    html += `
-                </tbody>
-            </table>
-        </div>
-    `;
-
+    html += `</tbody></table></div>`;
     mainContent.innerHTML = html;
     initIcons();
 }
-
-// --- Modals & Interactions ---
 
 function openEditModal(index) {
     const item = state.budgetData[state.selectedProject].items[index];
@@ -333,58 +481,36 @@ async function saveItemUpdate(index) {
     const project = state.selectedProject;
     const item = state.budgetData[project].items[index];
 
-    // Show saving status
     const saveBtn = document.querySelector('.modal-content button');
     const originalText = saveBtn.innerHTML;
     saveBtn.disabled = true;
     saveBtn.innerHTML = '<div class="spinner" style="width:20px; height:20px; border-width:2px; margin:0 auto;"></div>';
 
     try {
-        const response = await fetch(CONFIG.SCRIPT_URL, {
+        await fetch(CONFIG.SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors', // Google Apps Script requires no-cors or redirects handling
-            cache: 'no-cache',
-            headers: { 'Content-Type': 'application/json' },
+            mode: 'no-cors',
             body: JSON.stringify({
+                action: 'updateUtilization',
                 projectName: project,
                 row: item.row,
                 utilization: percent,
                 issueCategory: issueCategory,
-                issue: issue
+                issue: issue,
+                reporter: state.user.name + " (" + state.user.position + ")"
             })
         });
 
-        // Update local state
         item.utilization = percent;
         item.issue = issue ? `[${issueCategory}] ${issue}` : "";
+        item.reportedBy = state.user.name;
 
         modalContainer.classList.add('hidden');
         renderProjectDetail(project, state.budgetData[project]);
-        
-        // Show success (optional: replace with a toast)
-        console.log("Update sent successfully");
     } catch (error) {
         alert("Error saving data: " + error.message);
         saveBtn.disabled = false;
         saveBtn.innerHTML = originalText;
-    }
-}
-
-// --- Real API ---
-
-async function fetchProjectData(projectName) {
-    if (state.allData && state.allData[projectName]) {
-        return state.allData[projectName];
-    }
-
-    try {
-        const response = await fetch(CONFIG.SCRIPT_URL);
-        const data = await response.json();
-        state.allData = data; // Cache all projects
-        return data[projectName];
-    } catch (error) {
-        console.error("Fetch error:", error);
-        throw error;
     }
 }
 
@@ -403,9 +529,8 @@ window.onclick = (event) => {
 };
 
 // Initial Start
-renderProjectList();
+initApp();
 
-// Register Service Worker for PWA
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('service-worker.js')

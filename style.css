@@ -345,6 +345,54 @@ input:focus, select:focus {
     100% { transform: rotate(360deg); }
 }
 
+/* Auth Cards */
+.auth-card {
+    max-width: 500px;
+    margin: 2rem auto;
+    padding: 2.5rem;
+    border-radius: 20px;
+    text-align: left;
+    border: 1px solid var(--glass-border);
+}
+
+.auth-card h2 {
+    margin-bottom: 1rem;
+    font-size: 1.75rem;
+}
+
+.auth-card p {
+    margin-bottom: 2rem;
+    color: var(--text-dim);
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    color: var(--text-dim);
+}
+
+.btn-secondary:hover {
+    background: var(--glass);
+    color: white;
+}
+
+.reporter-cell {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    font-style: italic;
+}
+
+/* Badges */
+.badge {
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge.success { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+.badge.warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
     header {

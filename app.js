@@ -288,20 +288,20 @@ function updateIssueOptions() {
     let options = [];
     if (category === 'OCON') {
         options = [
-            "Payment submitted to finance but not issued",
-            "Material not delivered",
-            "Contractor not assigned",
-            "Other material delivery before this one",
-            "Price adjustment needed",
+            "Payment submitted to Finance; issuance pending",
+            "Material delivery pending",
+            "Contractor not yet assigned",
+            "Delayed by preceding material deliveries",
+            "Price adjustment or budget revision required",
             "Other"
         ];
     } else if (category === 'Provider') {
         options = [
-            "Document not fulfilled for the payment",
-            "The check is already issued",
-            "We are on proforma collection",
-            "Can't find material with the budget given",
-            "Need to wait few days (3 to 4 days)",
+            "Incomplete documentation for payment processing",
+            "Check has already been issued",
+            "Proforma collection in progress",
+            "Market price exceeds allocated budget",
+            "Minor delay expected (3-4 business days)",
             "Other"
         ];
     }

@@ -4,7 +4,7 @@
  */
 
 const CONFIG = {
-    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwE84B9hEtQXrpN6cHlYOB2fIJJto_eVQYOdImuQ7PWlnMG-J65Ui2BhEzheha5_m_3zw/exec'
+    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzi90AEVH7yMhaKnijaZ4y-Q6DJqr_lHhJIYOx_QRaj4YX6mkEc1z2Vu40fdhexrhtt8Q/exec'
 };
 
 // Application State
@@ -33,7 +33,11 @@ function initIcons() {
 }
 
 function cleanPhone(phone) {
-    return String(phone).replace(/\D/g, '');
+    if (!phone) return "";
+    let p = String(phone).replace(/\D/g, ''); 
+    if (p.startsWith('251')) p = p.substring(3);
+    if (p.startsWith('0')) p = p.substring(1);
+    return p;
 }
 
 // Format Currency

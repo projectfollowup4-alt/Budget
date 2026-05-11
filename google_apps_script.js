@@ -1,5 +1,5 @@
 /**
- * Google Apps Script for Budget Utilization Followup (v3 - Multi-Select & Robust Auth)
+ * Google Apps Script for Budget Utilization Followup (v4 - Ultra-Robust Auth)
  */
 
 function doGet(e) {
@@ -49,28 +49,23 @@ function getProjectsForUser(ss, phone) {
   const approvalsData = approvalSheet.getDataRange().getValues();
   let userApproval = null;
 
-  // Clean phone matching
-  // Search for the user's approval status
+  // Ultra-robust matching
   for (let i = 1; i < approvalsData.length; i++) {
     const rowPhone = cleanPhone(approvalsData[i][1]);
     const rowStatus = String(approvalsData[i][5] || "").trim();
     
-    if (rowPhone === phone) {
-      // Create or update the user record
+    if (rowPhone === phone && phone !== "") {
       const record = {
         name: approvalsData[i][0],
         status: rowStatus,
         approvedProjects: String(approvalsData[i][4] || "").split(',').map(s => s.trim())
       };
       
-      // PRIORITY: If we find an 'Approved' entry, that is our final answer.
       if (rowStatus.toLowerCase() === 'approved') {
         userApproval = record;
-        userApproval.status = 'Approved'; // Normalize casing
+        userApproval.status = 'Approved';
         break; 
       }
-      
-      // Otherwise, keep the latest entry found so far (usually 'Pending')
       userApproval = record;
     }
   }
@@ -78,6 +73,7 @@ function getProjectsForUser(ss, phone) {
   if (!userApproval) {
     return jsonResponse({ 
       status: 'not_found', 
+      debug: { sentPhone: phone },
       availableProjects: getAvailableProjectNames(ss) 
     });
   }
@@ -142,7 +138,7 @@ function handleRequestAccess(ss, data) {
   const sheet = getOrCreateApprovalsSheet(ss);
   sheet.appendRow([
     data.name,
-    data.phone,
+    "'" + data.phone, // Force as string to keep leading zeros
     data.position,
     Array.isArray(data.requestedProjects) ? data.requestedProjects.join(', ') : data.requestedProject,
     "", 
@@ -188,7 +184,11 @@ function getOrCreateApprovalsSheet(ss) {
 
 function cleanPhone(phone) {
   if (!phone) return "";
-  return String(phone).replace(/\D/g, ''); // Keep only digits
+  let p = String(phone).replace(/\D/g, ''); 
+  // Remove country code or leading zeros for normalization
+  if (p.startsWith('251')) p = p.substring(3);
+  if (p.startsWith('0')) p = p.substring(1);
+  return p;
 }
 
 function jsonResponse(data) {

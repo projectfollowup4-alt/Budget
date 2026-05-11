@@ -56,7 +56,7 @@ header {
 }
 
 .logo-container img {
-    height: 40px; /* Smaller, cleaner logo */
+    height: 45px; 
     width: auto;
     filter: brightness(0) invert(1);
 }

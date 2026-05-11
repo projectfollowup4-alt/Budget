@@ -2,7 +2,7 @@
   "name": "Budget Utilization Followup",
   "short_name": "Budget",
   "description": "OVID Construction Budget Tracking App",
-  "start_url": "/Budget/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",

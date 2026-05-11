@@ -1,11 +1,11 @@
 const CACHE_NAME = 'budget-app-v3';
 const ASSETS = [
-  '/Budget/',
-  '/Budget/index.html',
-  '/Budget/style.css',
-  '/Budget/app.js',
-  '/Budget/icon.png',
-  '/Budget/logo.png'
+  './',
+  './index.html',
+  './style.css',
+  './app.js',
+  './icon.png',
+  './logo.png'
 ];
 
 self.addEventListener('install', (event) => {

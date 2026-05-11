@@ -4,7 +4,7 @@
  */
 
 const CONFIG = {
-    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx6OA8RkB5Pasz-OFsA-O-ZbaxqDIB6Kb9scYidhOTvi6GtP2780fctx0fS_0swfG_81Q/exec'
+    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwXYeJZX-3a_G-1PP-JvR6xV_mvH3FZniEaQl0VQMvupDfTMRWgsrdAfBe3WM4dKTCW7w/exec'
 };
 
 // Application State
